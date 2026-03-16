@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waves.</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .wave-row {
+            position: relative;
+            background: #12121a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .wave-row canvas {
+            display: block;
+            width: 100%;
+        }
+
+        .wave-label {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.7;
+        }
+
+        .controls {
+            width: 280px;
+            background: #12121a;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .control-value {
+            font-size: 0.75rem;
+            color: #666;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #1a1a25;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .mute-btn {
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .mute-btn.playing {
+            background: #22c55e;
+            color: #000;
+        }
+
+        .mute-btn.muted {
+            background: #333;
+            color: #888;
+        }
+
+        .volume-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .volume-row input[type="range"] {
+            flex: 1;
+        }
+
+        .volume-row .control-value {
+            width: 36px;
+            text-align: right;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button-row .sum-btn,
+        .button-row .reset-btn {
+            flex: 1;
+            padding: 10px 8px;
+        }
+
+        .mute-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: #1a1a25;
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #666;
+        }
+
+        .mode-btn.active {
+            background: #333;
+            color: #fff;
+        }
+
+        .mode-btn:hover:not(.active) {
+            color: #999;
+        }
+
+        .reset-btn {
+            padding: 10px 16px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #666;
+        }
+
+        .reset-btn:hover {
+            background: #1a1a25;
+            color: #999;
+            border-color: #444;
+        }
+
+        .sum-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sum-btn.showing {
+            background: #333;
+            color: #fff;
+        }
+
+        .sum-btn.hidden {
+            background: transparent;
+            border: 1px solid #333;
+            color: #666;
+        }
+
+        .sum-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .frequency-control {
+            padding-top: 32px;
+            margin-top: 20px;
+            border-top: 1px solid #222;
+        }
+
+        .info {
+            margin-top: 20px;
+            text-align: center;
+            color: #444;
+            font-size: 0.75rem;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+            .controls {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Waves.</h1>
+    
+    <div class="container">
+        <div class="canvas-container" id="canvasContainer">
+            <!-- Canvases will be inserted here by JS -->
+        </div>
+        
+        <div class="controls">
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="modeFixed">Fixe</button>
+                <button class="mode-btn" id="modeScrolling">Défilante</button>
+            </div>
+            
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="modeSeparated">Séparé</button>
+                <button class="mode-btn" id="modeOverlay">Superposé</button>
+            </div>
+            
+            <div class="control-group" id="sliderContainer">
+                <!-- Sliders will be inserted here by JS -->
+            </div>
+            
+            <div class="control-group frequency-control">
+                <div class="control-header">
+                    <span class="control-label">Fréquence fondamentale</span>
+                    <span class="control-value" id="freqValue">220 Hz</span>
+                </div>
+                <input type="range" id="freqSlider" min="55" max="440" value="220" step="1">
+            </div>
+            
+            <div class="control-group">
+                <div class="control-header">
+                    <span class="control-label">Vitesse visuelle</span>
+                    <span class="control-value" id="speedValue">1×</span>
+                </div>
+                <input type="range" id="speedSlider" min="0.1" max="10" value="1" step="0.1">
+            </div>
+            
+            <button class="sum-btn showing" id="sumBtn">Cacher la somme</button>
+            
+            <button class="reset-btn" id="resetBtn">Réinitialiser</button>
+            
+            <div class="volume-row">
+                <button class="mute-btn muted" id="muteBtn">SON</button>
+                <input type="range" id="volumeSlider" min="0" max="100" value="30" step="1">
+                <span class="control-value" id="volumeValue">30%</span>
+            </div>
+        </div>
+    </div>
+    
+    <p class="info">Cliquez sur "SON" pour entendre la synthèse des harmoniques</p>
+
+    <script>
+        // Configuration
+        const HARMONICS = [
+            { name: 'Fondamentale', color: '#00ff88', multiplier: 1 },
+            { name: 'Harmonique 2', color: '#00ccff', multiplier: 2 },
+            { name: 'Harmonique 3', color: '#ff6600', multiplier: 3 },
+            { name: 'Harmonique 4', color: '#ff00aa', multiplier: 4 },
+            { name: 'Harmonique 5', color: '#aa00ff', multiplier: 5 },
+        ];
+        
+        const SUM_COLOR = '#ffffff';
+        const CANVAS_HEIGHT = 95;
+        const SUM_CANVAS_HEIGHT = 140;
+        
+        // State
+        let amplitudes = [1, 0.5, 0.3, 0.2, 0.1];
+        let baseFrequency = 220;
+        let isMuted = true;
+        let audioContext = null;
+        let oscillators = [];
+        let gainNodes = [];
+        let masterGain = null;
+        let animationTime = 0;
+        let viewMode = 'fixed';
+        let displayMode = 'separated';
+        let showSum = true;
+        let visualSpeed = 1;
+        let masterVolume = 0.3;
+        
+        // DOM Elements
+        const canvasContainer = document.getElementById('canvasContainer');
+        const sliderContainer = document.getElementById('sliderContainer');
+        const muteBtn = document.getElementById('muteBtn');
+        const freqSlider = document.getElementById('freqSlider');
+        const freqValue = document.getElementById('freqValue');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+        const modeScrolling = document.getElementById('modeScrolling');
+        const modeFixed = document.getElementById('modeFixed');
+        const modeSeparated = document.getElementById('modeSeparated');
+        const modeOverlay = document.getElementById('modeOverlay');
+        const sumBtn = document.getElementById('sumBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // Create canvases and sliders
+        const canvases = [];
+        const contexts = [];
+        const waveRows = [];
+        let overlayCanvas = null;
+        let overlayCtx = null;
+        let overlayRow = null;
+        let sumRow = null;
+        
+        function init() {
+            HARMONICS.forEach((h, i) => {
+                const row = document.createElement('div');
+                row.className = 'wave-row';
+                
+                const canvas = document.createElement('canvas');
+                canvas.height = CANVAS_HEIGHT;
+                canvases.push(canvas);
+                contexts.push(canvas.getContext('2d'));
+                
+                const label = document.createElement('div');
+                label.className = 'wave-label';
+                label.style.color = h.color;
+                label.textContent = h.name;
+                
+                row.appendChild(canvas);
+                row.appendChild(label);
+                canvasContainer.appendChild(row);
+                waveRows.push(row);
+                
+                const group = document.createElement('div');
+                group.className = 'control-group';
+                group.innerHTML = `
+                    <div class="control-header">
+                        <span class="control-label">
+                            <span class="color-dot" style="background: ${h.color}"></span>
+                            ${h.name}
+                        </span>
+                        <span class="control-value" id="ampValue${i}">${(amplitudes[i] * 100).toFixed(0)}%</span>
+                    </div>
+                    <input type="range" id="ampSlider${i}" min="0" max="100" value="${amplitudes[i] * 100}" data-index="${i}">
+                `;
+                sliderContainer.appendChild(group);
+            });
+            
+            overlayRow = document.createElement('div');
+            overlayRow.className = 'wave-row';
+            overlayRow.style.display = 'block';
+            
+            overlayCanvas = document.createElement('canvas');
+            overlayCanvas.height = 250;
+            overlayCtx = overlayCanvas.getContext('2d');
+            
+            const overlayLabel = document.createElement('div');
+            overlayLabel.className = 'wave-label';
+            overlayLabel.style.color = '#fff';
+            overlayLabel.textContent = 'Superposition';
+            
+            overlayRow.appendChild(overlayCanvas);
+            overlayRow.appendChild(overlayLabel);
+            canvasContainer.appendChild(overlayRow);
+            
+            sumRow = document.createElement('div');
+            sumRow.className = 'wave-row';
+            
+            const sumCanvas = document.createElement('canvas');
+            sumCanvas.height = SUM_CANVAS_HEIGHT;
+            canvases.push(sumCanvas);
+            contexts.push(sumCanvas.getContext('2d'));
+            
+            const sumLabel = document.createElement('div');
+            sumLabel.className = 'wave-label';
+            sumLabel.style.color = SUM_COLOR;
+            sumLabel.textContent = 'Somme';
+            
+            sumRow.appendChild(sumCanvas);
+            sumRow.appendChild(sumLabel);
+            canvasContainer.appendChild(sumRow);
+            waveRows.push(sumRow);
+            
+            updateDisplayMode();
+            
+            resizeCanvases();
+            window.addEventListener('resize', resizeCanvases);
+            
+            sliderContainer.querySelectorAll('input[type="range"]').forEach(slider => {
+                slider.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    amplitudes[index] = e.target.value / 100;
+                    document.getElementById(`ampValue${index}`).textContent = `${e.target.value}%`;
+                    updateAudio();
+                });
+            });
+            
+            freqSlider.addEventListener('input', (e) => {
+                baseFrequency = parseFloat(e.target.value);
+                freqValue.textContent = `${baseFrequency} Hz`;
+                updateAudio();
+            });
+            
+            speedSlider.addEventListener('input', (e) => {
+                visualSpeed = parseFloat(e.target.value);
+                speedValue.textContent = `${visualSpeed}×`;
+            });
+            
+            volumeSlider.addEventListener('input', (e) => {
+                masterVolume = parseFloat(e.target.value) / 100;
+                volumeValue.textContent = `${e.target.value}%`;
+                if (masterGain && !isMuted) {
+                    masterGain.gain.setValueAtTime(masterVolume, audioContext.currentTime);
+                }
+            });
+            
+            muteBtn.addEventListener('click', toggleMute);
+            
+            modeScrolling.addEventListener('click', () => {
+                viewMode = 'scrolling';
+                modeScrolling.classList.add('active');
+                modeFixed.classList.remove('active');
+            });
+            
+            modeFixed.addEventListener('click', () => {
+                viewMode = 'fixed';
+                modeFixed.classList.add('active');
+                modeScrolling.classList.remove('active');
+            });
+            
+            modeSeparated.addEventListener('click', () => {
+                displayMode = 'separated';
+                modeSeparated.classList.add('active');
+                modeOverlay.classList.remove('active');
+                updateDisplayMode();
+            });
+            
+            modeOverlay.addEventListener('click', () => {
+                displayMode = 'overlay';
+                modeOverlay.classList.add('active');
+                modeSeparated.classList.remove('active');
+                updateDisplayMode();
+            });
+            
+            sumBtn.addEventListener('click', () => {
+                showSum = !showSum;
+                if (showSum) {
+                    sumBtn.textContent = 'Cacher la somme';
+                    sumBtn.classList.remove('hidden');
+                    sumBtn.classList.add('showing');
+                    sumRow.style.display = 'block';
+                } else {
+                    sumBtn.textContent = 'Afficher la somme';
+                    sumBtn.classList.remove('showing');
+                    sumBtn.classList.add('hidden');
+                    sumRow.style.display = 'none';
+                }
+            });
+            
+            resetBtn.addEventListener('click', resetValues);
+            
+            requestAnimationFrame(animate);
+        }
+        
+        function resetValues() {
+            amplitudes = [0, 0, 0, 0, 0];
+            baseFrequency = 220;
+            visualSpeed = 3;
+            
+            HARMONICS.forEach((h, i) => {
+                document.getElementById(`ampSlider${i}`).value = 0;
+                document.getElementById(`ampValue${i}`).textContent = '0%';
+            });
+            
+            freqSlider.value = 220;
+            freqValue.textContent = '220 Hz';
+            
+            speedSlider.value = 3;
+            speedValue.textContent = '3×';
+            
+            updateAudio();
+        }
+        
+        function updateDisplayMode() {
+            if (displayMode === 'overlay') {
+                waveRows.forEach((row, i) => {
+                    if (i < HARMONICS.length) row.style.display = 'none';
+                });
+                overlayRow.style.display = 'block';
+            } else {
+                waveRows.forEach((row, i) => {
+                    if (i < HARMONICS.length) row.style.display = 'block';
+                });
+                overlayRow.style.display = 'none';
+            }
+        }
+        
+        function resizeCanvases() {
+            const width = canvasContainer.clientWidth;
+            canvases.forEach(canvas => {
+                canvas.width = width * window.devicePixelRatio;
+                canvas.style.width = width + 'px';
+            });
+            if (overlayCanvas) {
+                overlayCanvas.width = width * window.devicePixelRatio;
+                overlayCanvas.style.width = width + 'px';
+            }
+        }
+        
+        function drawWave(ctx, canvas, amplitude, frequency, color, isSum = false) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerY = height / 2;
+            const maxAmplitude = (height / 2) * 0.8;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = isSum ? 3 : 2;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = isSum ? 15 : 10;
+            ctx.beginPath();
+            
+            const cycles = viewMode === 'fixed' ? 0.5 : 3;
+            const pixelsPerCycle = width / cycles;
+            
+            for (let x = 0; x < width; x++) {
+                const spatialPhase = (x / pixelsPerCycle) * Math.PI * 2;
+                const timePhase = animationTime * frequency * 0.002 * visualSpeed;
+                
+                let y;
+                if (viewMode === 'fixed') {
+                    y = centerY - Math.sin(spatialPhase) * Math.sin(timePhase) * amplitude * maxAmplitude;
+                } else {
+                    y = centerY - Math.sin(spatialPhase + timePhase) * amplitude * maxAmplitude;
+                }
+                
+                if (x === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawOverlayWaves() {
+            const width = overlayCanvas.width;
+            const height = overlayCanvas.height;
+            const centerY = height / 2;
+            const maxAmplitude = (height / 2) * 0.8;
+            
+            overlayCtx.clearRect(0, 0, width, height);
+            
+            overlayCtx.strokeStyle = '#222';
+            overlayCtx.lineWidth = 1;
+            overlayCtx.beginPath();
+            overlayCtx.moveTo(0, centerY);
+            overlayCtx.lineTo(width, centerY);
+            overlayCtx.stroke();
+            
+            const cycles = viewMode === 'fixed' ? 0.5 : 3;
+            const pixelsPerCycle = width / cycles;
+            
+            HARMONICS.forEach((h, i) => {
+                overlayCtx.strokeStyle = h.color;
+                overlayCtx.lineWidth = 2;
+                overlayCtx.shadowColor = h.color;
+                overlayCtx.shadowBlur = 8;
+                overlayCtx.beginPath();
+                
+                for (let x = 0; x < width; x++) {
+                    const spatialPhase = (x / pixelsPerCycle) * Math.PI * 2 * h.multiplier;
+                    const timePhase = animationTime * h.multiplier * 0.002 * visualSpeed;
+                    
+                    let y;
+                    if (viewMode === 'fixed') {
+                        y = centerY - Math.sin(spatialPhase) * Math.sin(timePhase) * amplitudes[i] * maxAmplitude;
+                    } else {
+                        y = centerY - Math.sin(spatialPhase + timePhase) * amplitudes[i] * maxAmplitude;
+                    }
+                    
+                    if (x === 0) {
+                        overlayCtx.moveTo(x, y);
+                    } else {
+                        overlayCtx.lineTo(x, y);
+                    }
+                }
+                
+                overlayCtx.stroke();
+            });
+            
+            overlayCtx.shadowBlur = 0;
+        }
+        
+        function drawSumWave(ctx, canvas) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerY = height / 2;
+            const maxAmplitude = (height / 2) * 0.7;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+            
+            ctx.strokeStyle = SUM_COLOR;
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = SUM_COLOR;
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            
+            const cycles = viewMode === 'fixed' ? 0.5 : 3;
+            const pixelsPerCycle = width / cycles;
+            
+            const totalAmp = amplitudes.reduce((a, b) => a + b, 0);
+            const normFactor = totalAmp > 0 ? 1 / totalAmp : 1;
+            
+            for (let x = 0; x < width; x++) {
+                let y = 0;
+                
+                HARMONICS.forEach((h, i) => {
+                    const spatialPhase = (x / pixelsPerCycle) * Math.PI * 2 * h.multiplier;
+                    const timePhase = animationTime * h.multiplier * 0.002 * visualSpeed;
+                    
+                    if (viewMode === 'fixed') {
+                        y += Math.sin(spatialPhase) * Math.sin(timePhase) * amplitudes[i];
+                    } else {
+                        y += Math.sin(spatialPhase + timePhase) * amplitudes[i];
+                    }
+                });
+                
+                y = centerY - y * normFactor * maxAmplitude;
+                
+                if (x === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+        
+        function animate(timestamp) {
+            animationTime = timestamp;
+            
+            if (displayMode === 'separated') {
+                HARMONICS.forEach((h, i) => {
+                    drawWave(contexts[i], canvases[i], amplitudes[i], h.multiplier, h.color);
+                });
+            } else {
+                drawOverlayWaves();
+            }
+            
+            drawSumWave(contexts[HARMONICS.length], canvases[HARMONICS.length]);
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Audio
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioContext.createGain();
+            masterGain.gain.value = masterVolume;
+            masterGain.connect(audioContext.destination);
+            
+            HARMONICS.forEach((h, i) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.value = baseFrequency * h.multiplier;
+                gain.gain.value = amplitudes[i];
+                
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start();
+                
+                oscillators.push(osc);
+                gainNodes.push(gain);
+            });
+        }
+        
+        function updateAudio() {
+            if (!audioContext || isMuted) return;
+            
+            HARMONICS.forEach((h, i) => {
+                oscillators[i].frequency.setValueAtTime(
+                    baseFrequency * h.multiplier,
+                    audioContext.currentTime
+                );
+                gainNodes[i].gain.setValueAtTime(
+                    amplitudes[i],
+                    audioContext.currentTime
+                );
+            });
+        }
+        
+        function toggleMute() {
+            if (isMuted) {
+                if (!audioContext) {
+                    initAudio();
+                } else {
+                    audioContext.resume();
+                }
+                masterGain.gain.setValueAtTime(masterVolume, audioContext.currentTime);
+                isMuted = false;
+                muteBtn.classList.remove('muted');
+                muteBtn.classList.add('playing');
+            } else {
+                masterGain.gain.setValueAtTime(0, audioContext.currentTime);
+                isMuted = true;
+                muteBtn.classList.remove('playing');
+                muteBtn.classList.add('muted');
+            }
+        }
+        
+        // Init
+        init();
+    </script>
+</body>
+</html>
