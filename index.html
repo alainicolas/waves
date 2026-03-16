@@ -614,7 +614,7 @@
             const pixelsPerCycle = width / cycles;
             
             for (let x = 0; x < width; x++) {
-                const spatialPhase = (x / pixelsPerCycle) * Math.PI * 2;
+                const spatialPhase = (x / pixelsPerCycle) * Math.PI * 2 * frequency;
                 const timePhase = animationTime * frequency * 0.002 * visualSpeed;
                 
                 let y;
